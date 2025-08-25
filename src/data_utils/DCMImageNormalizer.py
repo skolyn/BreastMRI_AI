@@ -1,8 +1,7 @@
 import os
-
 import numpy as np
 from skimage.transform import resize
-from typing import Tuple, Dict
+from typing import Tuple, Callable, List
 
 
 class DICOMImageNormalizer:
@@ -32,10 +31,12 @@ class DICOMImageNormalizer:
     def normalize(img: np.ndarray) -> np.ndarray:
         """
         Normalize an image to the range [0,1].
+        - Subtracts the minimum pixel value from the entire image (so minimum becomes 0).
+        - Divides by the maximum pixel value (so maximum becomes 1).
         Args:
             img (np.ndarray): Input image array.
         Returns:
-            np.ndarray: Normalized image array.
+            np.ndarray: Normalized image array in [0,1].
         """
         img = img - np.min(img)
         if np.max(img) != 0:
@@ -44,7 +45,8 @@ class DICOMImageNormalizer:
 
     def resize_image(self, img: np.ndarray) -> np.ndarray:
         """
-        Resize an image to the target size.
+        Resize an image to the target size (default 224x224).
+        Uses anti-aliasing for smoother results.
         Args:
             img (np.ndarray): Input image array.
         Returns:
@@ -54,7 +56,11 @@ class DICOMImageNormalizer:
 
     def process_image(self, img_name: str) -> np.ndarray:
         """
-        Public method to load, normalize, and resize a single DICOM image by name.
+        Load, normalize, and resize a single DICOM image by filename.
+        Pipeline:
+            1. Load DICOM file as numpy array.
+            2. Normalize pixel intensities to [0,1].
+            3. Resize image to target size (e.g. 224x224).
         Args:
             img_name (str): Filename of the DICOM file.
         Returns:
@@ -65,14 +71,38 @@ class DICOMImageNormalizer:
         img = self.resize_image(img)
         return img
 
-    def process_all(self) -> Dict[str, np.ndarray]:
+    def process_all(self) -> list[np.ndarray]:
         """
-        Public method to process all DICOM images in the DCMProcessor's directory.
+        Process all DICOM images in the given directory.
+        For each `.dcm` file:
+            - Load image
+            - Normalize
+            - Resize
         Returns:
-            Dict[str, np.ndarray]: Dictionary with filenames as keys and processed image arrays as values.
+            list[np.ndarray]: List of processed image arrays.
         """
-        processed_dict = {}
+        processed_list = []
         for f in sorted(os.listdir(self.dcm_processor.dicom_dir)):
             if f.endswith(".dcm"):
-                processed_dict[f] = self.process_image(f)
-        return processed_dict
+                processed_list.append(self.process_image(f))
+        return processed_list
+
+    @staticmethod
+    def apply_transforms(img: np.ndarray, transforms: List[Callable[[np.ndarray], np.ndarray]]) -> np.ndarray:
+        """
+        Apply a sequence of transforms to an image (similar to torchvision.transforms.Compose).
+        Each transform must be a function that takes and returns a numpy array.
+        Example:
+            def invert(x): return 1 - x
+            def threshold(x): return (x > 0.5).astype(float)
+            transforms = [invert, threshold]
+            new_img = DICOMImageNormalizer.apply_transforms(img, transforms)
+        Args:
+            img (np.ndarray): Input image array.
+            transforms (List[Callable]): List of functions to apply in sequence.
+        Returns:
+            np.ndarray: Transformed image.
+        """
+        for t in transforms:
+            img = t(img)
+        return img
