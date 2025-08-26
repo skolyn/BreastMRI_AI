@@ -7,7 +7,7 @@ from skimage.transform import resize
 
 
 
-class DICOMImageNormalizer:
+class DCMImageNormalizer:
     """A class for normalizing and resizing DICOM images using an existing DCMProcessor instance."""
 
     def __init__(self, dcm_processor) -> None:
