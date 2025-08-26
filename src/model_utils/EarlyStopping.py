@@ -1,12 +1,14 @@
 import torch
+import torch.nn as nn
 
 class EarlyStopping:
     """Early stops the training if validation loss doesn't improve after a given patience."""
+
     def __init__(self,
-                 patience=5,
-                 verbose=True,
-                 delta=0.0,
-                 save_path="checkpoint.pt"):
+                 patience: int = 5,
+                 verbose: bool = True,
+                 delta: float = 0.0,
+                 save_path: str = "checkpoint.pt"):
         """
         Args:
             patience (int): How many epochs to wait after last improvement.
@@ -14,15 +16,15 @@ class EarlyStopping:
             delta (float): Minimum change to qualify as improvement.
             save_path (str): Path to save the best model.
         """
-        self.patience = patience
-        self.verbose = verbose
-        self.delta = delta
-        self.save_path = save_path
-        self.best_loss = float('inf')
-        self.counter = 0
-        self.early_stop = False
+        self.patience: int = patience
+        self.verbose: bool = verbose
+        self.delta: float = delta
+        self.save_path: str = save_path
+        self.best_loss: float = float('inf')
+        self.counter: int = 0
+        self.early_stop: bool = False
 
-    def __call__(self, val_loss, model):
+    def __call__(self, val_loss:float, model:nn.Module):
         if val_loss < self.best_loss - self.delta:
             self.best_loss = val_loss
             self.counter = 0
