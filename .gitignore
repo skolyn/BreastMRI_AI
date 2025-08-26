@@ -1,5 +1,9 @@
 
-
+*.dcm
+*.png
+*.csv
+*.xlsx
+data
 
 
 # Byte-compiled / optimized / DLL files
