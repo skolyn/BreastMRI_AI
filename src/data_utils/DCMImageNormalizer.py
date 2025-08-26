@@ -110,3 +110,4 @@ class DCMImageNormalizer:
         for t in transforms:
             img = t(img)
         return img
+

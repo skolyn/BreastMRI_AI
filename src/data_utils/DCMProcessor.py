@@ -56,7 +56,7 @@ class DCMProcessor:
         ds = self.__load_dicom_file(dicom_filename)
         return ds.pixel_array
 
-    def load_dicom_dir_datasets(self) -> List[pdc.FileDataset]:
+    def load_dicom_dir_datasets(self,subdir:Optional[str]=None) -> List[pdc.FileDataset]:
         """
         Load all DICOM files in the directory as datasets.
 
@@ -64,46 +64,75 @@ class DCMProcessor:
             List[pydicom.FileDataset]: A list of DICOM dataset objects.
         """
         datasets: List[pdc.FileDataset] = []
-        for f in sorted(os.listdir(self.dicom_dir)):
+        dir=os.path.join(self.dicom_dir, subdir) if subdir else self.dicom_dir
+        for f in sorted(os.listdir(dir)):
             if f.endswith(".dcm"):
                 ds = self.__load_dicom_file(f)
                 datasets.append(ds)
         return datasets
 
-    def load_dicom_dir_images(self) -> List[np.ndarray]:
+    def load_dicom_dir_images(self,subdir=None) -> List[np.ndarray]:
         """
         Load all DICOM files in the directory as NumPy arrays.
 
         Returns:
             List[np.ndarray]: A list of pixel arrays for each DICOM file.
         """
-        datasets = self.load_dicom_dir_datasets()
+        datasets = self.load_dicom_dir_datasets(subdir)
         return [ds.pixel_array for ds in datasets]
 
-    def load_volume(self) -> np.ndarray:
+    def load_volume(self,subdir:str=None) -> np.ndarray:
         """
         Load all DICOM images in the directory as a 3D volume.
 
         Returns:
             np.ndarray: 3D array with shape (num_slices, height, width).
         """
-        images = self.load_dicom_dir_images()
+        images = self.load_dicom_dir_images(subdir=subdir)
         if not images:
             raise ValueError("No DICOM files found in the directory.")
         return np.stack(images, axis=0)
 
-    def visualize_volume(self, volume: np.ndarray = None):
+    def visualize_volume(self, volume: Optional[np.ndarray] = None, group_size: int = 4):
         """
-        Visualize the first slice of a 3D DICOM volume using matplotlib.
+        Visualize DICOM slices in groups (e.g., 4 slices per study).
 
         Args:
-            volume (np.ndarray, optional): 3D NumPy array. If None, loads volume from directory.
+            volume (np.ndarray, optional): Preloaded volume (num_slices, H, W).
+            group_size (int): Number of slices per study (default=4).
         """
         if volume is None:
             volume = self.load_volume()
-        plt.imshow(volume[0], cmap='gray')
-        plt.title("Slice 0")
-        plt.axis('off')
+
+        num_slices = volume.shape[0]
+        num_groups = num_slices // group_size
+
+        for g in range(num_groups):
+            group = volume[g * group_size:(g + 1) * group_size]
+
+            fig, axes = plt.subplots(1, group_size, figsize=(12, 3))
+            for i, ax in enumerate(axes):
+                ax.imshow(group[i], cmap="gray")
+                ax.set_title(f"Slice {g*group_size + i}")
+                ax.axis("off")
+            plt.suptitle(f"Group {g+1} (slices {g*group_size}–{g*group_size+group_size-1})")
+            plt.show()
+
+    def visualize_slice(self, slice_index: int, volume: Optional[np.ndarray] = None):
+        """
+        Visualize a single slice from the volume.
+
+        Args:
+            slice_index (int): Index of the slice to visualize.
+            volume (np.ndarray, optional): Preloaded volume.
+        """
+        if volume is None:
+            volume = self.load_volume()
+        if slice_index >= volume.shape[0]:
+            raise IndexError("Slice index out of range.")
+        plt.imshow(volume[slice_index], cmap="gray")
+        plt.title(f"Slice {slice_index}")
+        plt.axis("off")
         plt.show()
 
     @staticmethod
@@ -142,3 +171,6 @@ class DCMProcessor:
         rows = [self.__extract_metadata(ds, tags) for ds in datasets]
         return pd.DataFrame(rows)
 
+
+
+d=DCMProcessor("../../data/fastMRI_breast_IDS_150_300_DCM/fastMRI_breast_151_1_DCM")
