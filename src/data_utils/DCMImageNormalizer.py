@@ -1,13 +1,16 @@
 import os
+from typing import Tuple, Callable, List
+
 import numpy as np
 from skimage.transform import resize
-from typing import Tuple, Callable, List
+
+
 
 
 class DICOMImageNormalizer:
     """A class for normalizing and resizing DICOM images using an existing DCMProcessor instance."""
 
-    def __init__(self, dcm_processor, target_size: Tuple[int, int] = (224, 224)) -> None:
+    def __init__(self, dcm_processor) -> None:
         """
         Initialize the DICOMImageNormalizer with a DCMProcessor instance.
         Args:
@@ -15,7 +18,6 @@ class DICOMImageNormalizer:
             target_size (Tuple[int, int], optional): Desired image size (height, width). Defaults to (224, 224).
         """
         self.dcm_processor = dcm_processor
-        self.target_size = target_size
 
     def __load_image(self, img_name: str) -> np.ndarray:
         """
@@ -43,7 +45,8 @@ class DICOMImageNormalizer:
             img = img / np.max(img)
         return img
 
-    def resize_image(self, img: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def resize_image(self, img: np.ndarray,target_size:Tuple[int,int]=(224,224) -> np.ndarray:
         """
         Resize an image to the target size (default 224x224).
         Uses anti-aliasing for smoother results.
@@ -52,7 +55,7 @@ class DICOMImageNormalizer:
         Returns:
             np.ndarray: Resized image array.
         """
-        return resize(img, self.target_size, anti_aliasing=True)
+        return resize(img, target_size, anti_aliasing=True)
 
     def process_image(self, img_name: str) -> np.ndarray:
         """
