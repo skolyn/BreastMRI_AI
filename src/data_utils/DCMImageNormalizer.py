@@ -15,7 +15,6 @@ class DCMImageNormalizer:
         Initialize the DICOMImageNormalizer with a DCMProcessor instance.
         Args:
             dcm_processor: An instance of DCMProcessor.
-            target_size (Tuple[int, int], optional): Desired image size (height, width). Defaults to (224, 224).
         """
         self.dcm_processor = dcm_processor
 
@@ -46,14 +45,16 @@ class DCMImageNormalizer:
         return img
 
     @staticmethod
-    def resize_image(self, img: np.ndarray,target_size:Tuple[int,int]=(224,224) -> np.ndarray:
+    def resize_image(img: np.ndarray,target_size:Tuple[int,int]=(224,224)) -> np.ndarray:
         """
         Resize an image to the target size (default 224x224).
         Uses anti-aliasing for smoother results.
         Args:
             img (np.ndarray): Input image array.
+            target_size (Tuple[int,int], optional): Desired image size (height, width).
         Returns:
             np.ndarray: Resized image array.
+
         """
         return resize(img, target_size, anti_aliasing=True)
 
